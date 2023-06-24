@@ -2,6 +2,7 @@ package dev.dexuby.easycommand.common;
 
 import dev.dexuby.easycommon.builder.FluentBuilder;
 import dev.dexuby.easycommon.conditional.Conditional;
+import dev.dexuby.easycommon.conditional.Preconditions;
 import dev.dexuby.easycommon.dependencyinjection.InstanceServiceProvider;
 import dev.dexuby.easycommon.dependencyinjection.ServiceProvider;
 import dev.dexuby.easyreflect.EasyReflect;
@@ -25,7 +26,9 @@ public class EasyCommand {
 
         this.classLoader = ClassLoader.getSystemClassLoader();
         this.easyReflect = new EasyReflect();
-        this.serviceProvider = new InstanceServiceProvider();
+        this.serviceProvider = InstanceServiceProvider.builder()
+                .selfService()
+                .build();
 
     }
 
@@ -35,6 +38,13 @@ public class EasyCommand {
 
     }
 
+    /**
+     * Resolves all command handlers and initializes a new instance using the first found satisfiable constructor
+     * prioritising constructors with no parameters.
+     *
+     * @return The resolved commands.
+     */
+
     public List<Command> findAndCreateCommands() {
 
         final Map<Class<?>, CommandHandler> classes = this.easyReflect.findAnnotatedClasses(CommandHandler.class);
@@ -42,28 +52,61 @@ public class EasyCommand {
         for (final Map.Entry<Class<?>, CommandHandler> entry : classes.entrySet()) {
             try {
                 if (!Command.class.isAssignableFrom(entry.getKey())) continue;
-                final Constructor<?>[] constructors = entry.getKey().getDeclaredConstructors();
-                assert constructors.length >= 1;
+                final Constructor<?>[] constructors = entry.getKey().getConstructors();
+                Preconditions.checkState(constructors.length >= 1);
 
-                Command instance;
-                final Constructor<?> constructor = constructors[0];
-                if (constructor.getParameters().length > 0) {
-                    final Object[] parameters = new Object[constructor.getParameters().length];
-                    for (int i = 0; i < constructor.getParameters().length; i++) {
-                        final Parameter parameter = constructor.getParameters()[i];
-                        if (parameter.isAnnotationPresent(Identifier.class)) {
-                            final Identifier identifier = parameter.getAnnotation(Identifier.class);
-                            parameters[i] = this.serviceProvider.getService(parameter.getType(), identifier.value());
-                        } else {
-                            parameters[i] = this.serviceProvider.getService(parameter.getType());
+                Constructor<?> targetConstructor = null;
+                for (final Constructor<?> constructor : constructors) {
+                    // Select constructor without params if present.
+                    if (constructor.getParameterCount() == 0) {
+                        targetConstructor = constructor;
+                        break;
+                    }
+                }
+
+                Object[] resolvedParameters = new Object[0];
+                if (targetConstructor == null) {
+                    // Find a dependency satisfiable constructor and resolve.
+                    for (final Constructor<?> constructor : constructors) {
+                        boolean satisfied = true;
+                        final Parameter[] parameters = constructor.getParameters();
+                        for (final Parameter parameter : parameters) {
+                            if (parameter.isAnnotationPresent(Identifier.class)) {
+                                final Identifier identifier = parameter.getAnnotation(Identifier.class);
+                                if (!this.serviceProvider.hasService(parameter.getType(), identifier.value())) {
+                                    satisfied = false;
+                                    break;
+                                }
+                            } else {
+                                if (!this.serviceProvider.hasService(parameter.getType())) {
+                                    satisfied = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (satisfied) {
+                            targetConstructor = constructor;
+                            resolvedParameters = new Object[parameters.length];
+                            for (int i = 0; i < parameters.length; i++) {
+                                final Parameter parameter = parameters[i];
+                                if (parameter.isAnnotationPresent(Identifier.class)) {
+                                    final Identifier identifier = parameter.getAnnotation(Identifier.class);
+                                    resolvedParameters[i] = this.serviceProvider.getService(parameter.getType(), identifier.value());
+                                } else {
+                                    resolvedParameters[i] = this.serviceProvider.getService(parameter.getType());
+                                }
+                            }
                         }
                     }
-                    instance = (Command) constructor.newInstance(parameters);
-                } else {
-                    instance = (Command) constructor.newInstance();
                 }
-                instances.add(instance);
-            } catch (final InvocationTargetException | InstantiationException | IllegalAccessException ex) {
+
+                if (targetConstructor == null) {
+                    // Failed to find constructor, skipping...
+                } else {
+                    instances.add((Command) targetConstructor.newInstance(resolvedParameters));
+                }
+            } catch (final InvocationTargetException | InstantiationException | IllegalAccessException | IllegalStateException ex) {
                 ex.printStackTrace();
             }
         }

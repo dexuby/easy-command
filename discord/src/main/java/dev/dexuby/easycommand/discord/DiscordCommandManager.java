@@ -1,4 +1,6 @@
 package dev.dexuby.easycommand.discord;
 
-public class DiscordCommandManager {
+import dev.dexuby.easycommand.common.CommandManager;
+
+public class DiscordCommandManager implements CommandManager {
 }

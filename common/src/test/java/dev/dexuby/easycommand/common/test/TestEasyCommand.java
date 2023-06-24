@@ -20,6 +20,7 @@ public class TestEasyCommand {
                         .service("first", "hello world")
                         .service("second", "test")
                         .service("second value no identifier")
+                        .selfService()
                         .build())
                 .resolvePackage("dev.dexuby.easycommand")
                 .build();
