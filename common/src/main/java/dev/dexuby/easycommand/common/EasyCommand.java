@@ -4,7 +4,6 @@ import dev.dexuby.easycommand.common.util.Conditional;
 import dev.dexuby.easycommand.common.util.FluentBuilder;
 import dev.dexuby.easycommand.common.dependencyinjection.InstanceServiceProvider;
 import dev.dexuby.easycommand.common.dependencyinjection.ServiceProvider;
-import dev.dexuby.easycommand.common.util.Preconditions;
 import dev.dexuby.easyreflect.EasyReflect;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,6 +11,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +23,7 @@ public class EasyCommand {
 
     private EasyCommand() {
 
-        this.classLoader = this.getClass().getClassLoader();
+        this.classLoader = ClassLoader.getSystemClassLoader();
         this.easyReflect = new EasyReflect();
         this.serviceProvider = new InstanceServiceProvider();
 
@@ -98,8 +98,8 @@ public class EasyCommand {
 
     public static class Builder implements FluentBuilder<EasyCommand> {
 
-        private final List<String> targetPackages = new ArrayList<>();
-        private final List<String> ignoredPackages = new ArrayList<>();
+        private final List<String> ignoredPackages = new LinkedList<>();
+        private final List<String> targetPackages = new LinkedList<>();
 
         private ClassLoader classLoader;
         private EasyReflect easyReflect;

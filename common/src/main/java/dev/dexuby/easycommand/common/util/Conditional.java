@@ -1,5 +1,6 @@
 package dev.dexuby.easycommand.common.util;
 
+import dev.dexuby.easycommon.Procedure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
