@@ -6,8 +6,15 @@
 
     <groupId>dev.dexuby</groupId>
     <artifactId>easycommand</artifactId>
+    <packaging>pom</packaging>
     <name>EasyCommand</name>
     <version>0.0.1</version>
+
+    <modules>
+        <module>common</module>
+        <module>discord</module>
+        <module>bukkit</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -15,41 +22,22 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <build>
-        <finalName>${project.name}-${project.version}</finalName>
-        <directory>target</directory>
-        <sourceDirectory>${basedir}/src/main/java/</sourceDirectory>
-    </build>
-
-    <repositories>
-        <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>16.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.19.2-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.discord4j</groupId>
-            <artifactId>discord4j-core</artifactId>
-            <version>3.2.3</version>
-            <scope>provided</scope>
+            <version>24.0.1</version>
         </dependency>
         <dependency>
             <groupId>dev.dexuby</groupId>
             <artifactId>easyreflect</artifactId>
             <version>1.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.11.0</version>
+            <type>maven-plugin</type>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
