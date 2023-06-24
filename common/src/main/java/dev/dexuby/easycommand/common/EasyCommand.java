@@ -1,5 +1,6 @@
 package dev.dexuby.easycommand.common;
 
+import dev.dexuby.easycommand.common.util.Conditional;
 import dev.dexuby.easycommand.common.util.FluentBuilder;
 import dev.dexuby.easycommand.common.dependencyinjection.InstanceServiceProvider;
 import dev.dexuby.easycommand.common.dependencyinjection.ServiceProvider;
@@ -22,6 +23,7 @@ public class EasyCommand {
 
     private EasyCommand() {
 
+        this.classLoader = this.getClass().getClassLoader();
         this.easyReflect = new EasyReflect();
         this.serviceProvider = new InstanceServiceProvider();
 
@@ -142,14 +144,10 @@ public class EasyCommand {
         @Override
         public EasyCommand build() {
 
-            Preconditions.checkNotNull(this.classLoader);
-
             final EasyCommand easyCommand = new EasyCommand();
-            easyCommand.setClassLoader(this.classLoader);
-            if (this.serviceProvider != null)
-                easyCommand.setServiceProvider(this.serviceProvider);
-            if (this.easyReflect != null)
-                easyCommand.setEasyReflect(this.easyReflect);
+            Conditional.executeIfNotNull(this.classLoader, () -> easyCommand.setClassLoader(this.classLoader));
+            Conditional.executeIfNotNull(this.serviceProvider, () -> easyCommand.setServiceProvider(this.serviceProvider));
+            Conditional.executeIfNotNull(this.easyReflect, () -> easyCommand.setEasyReflect(this.easyReflect));
 
             for (final String ignoredPackage : this.ignoredPackages)
                 easyCommand.easyReflect.ignorePackage(ignoredPackage);
