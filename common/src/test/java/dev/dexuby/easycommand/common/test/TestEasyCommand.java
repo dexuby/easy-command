@@ -2,7 +2,7 @@ package dev.dexuby.easycommand.common.test;
 
 import dev.dexuby.easycommand.common.Command;
 import dev.dexuby.easycommand.common.EasyCommand;
-import dev.dexuby.easycommand.common.dependencyinjection.InstanceServiceProvider;
+import dev.dexuby.easycommon.dependencyinjection.InstanceServiceProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

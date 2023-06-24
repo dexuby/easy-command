@@ -1,9 +1,9 @@
 package dev.dexuby.easycommand.common;
 
-import dev.dexuby.easycommand.common.util.Conditional;
-import dev.dexuby.easycommand.common.util.FluentBuilder;
-import dev.dexuby.easycommand.common.dependencyinjection.InstanceServiceProvider;
-import dev.dexuby.easycommand.common.dependencyinjection.ServiceProvider;
+import dev.dexuby.easycommon.builder.FluentBuilder;
+import dev.dexuby.easycommon.conditional.Conditional;
+import dev.dexuby.easycommon.dependencyinjection.InstanceServiceProvider;
+import dev.dexuby.easycommon.dependencyinjection.ServiceProvider;
 import dev.dexuby.easyreflect.EasyReflect;
 import org.jetbrains.annotations.NotNull;
 
