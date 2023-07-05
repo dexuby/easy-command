@@ -8,24 +8,24 @@ import dev.dexuby.easycommon.dependencyinjection.ServiceProvider;
 import dev.dexuby.easyreflect.EasyReflect;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.*;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class EasyCommand {
 
+    private Logger logger;
     private ClassLoader classLoader;
     private EasyReflect easyReflect;
     private ServiceProvider serviceProvider;
 
     private EasyCommand() {
 
+        this.logger = Constants.LOGGER;
         this.classLoader = ClassLoader.getSystemClassLoader();
-        this.easyReflect = new EasyReflect();
+        this.easyReflect = EasyReflect.builder().build();
         this.serviceProvider = InstanceServiceProvider.builder()
                 .selfService()
                 .build();
@@ -47,9 +47,9 @@ public class EasyCommand {
 
     public List<Command> findAndCreateCommands() {
 
-        final Map<Class<?>, CommandHandler> classes = this.easyReflect.findAnnotatedClasses(CommandHandler.class);
-        final List<Command> instances = new ArrayList<>(classes.size());
-        for (final Map.Entry<Class<?>, CommandHandler> entry : classes.entrySet()) {
+        final Map<Class<?>, CommandHandler> result = this.easyReflect.findAnnotatedClasses(CommandHandler.class);
+        final List<Command> instances = new ArrayList<>(result.size());
+        for (final Map.Entry<Class<?>, CommandHandler> entry : result.entrySet()) {
             try {
                 if (!Command.class.isAssignableFrom(entry.getKey())) continue;
                 final Constructor<?>[] constructors = entry.getKey().getConstructors();
@@ -102,7 +102,7 @@ public class EasyCommand {
                 }
 
                 if (targetConstructor == null) {
-                    // Failed to find constructor, skipping...
+                    this.logger.warning(String.format("Skipping annotated class '%s' because no satisfiable constructor was found.", entry.getKey().getName()));
                 } else {
                     instances.add((Command) targetConstructor.newInstance(resolvedParameters));
                 }
@@ -112,6 +112,26 @@ public class EasyCommand {
         }
 
         return instances;
+
+    }
+
+    public List<TestCommand> processCommandClass(@NotNull final Class<?> clazz) {
+
+        // Needs real instance?
+        final List<TestCommand> commands = new ArrayList<>();
+        final Map<Method, CommandName> result = this.easyReflect.findAnnotatedMethods(clazz, CommandName.class);
+        for (final Map.Entry<Method, CommandName> entry : result.entrySet()) {
+            if (!Modifier.isPublic(entry.getKey().getModifiers())) continue;
+            commands.add(new TestCommand(clazz, entry.getValue().value()));
+        }
+
+        return commands;
+
+    }
+
+    private void setLogger(@NotNull final Logger logger) {
+
+        this.logger = logger;
 
     }
 
@@ -141,12 +161,20 @@ public class EasyCommand {
 
     public static class Builder implements FluentBuilder<EasyCommand> {
 
-        private final List<String> ignoredPackages = new LinkedList<>();
-        private final List<String> targetPackages = new LinkedList<>();
+        private final List<String> ignoredPackages = new ArrayList<>();
+        private final List<String> targetPackages = new ArrayList<>();
 
+        private Logger logger;
         private ClassLoader classLoader;
         private EasyReflect easyReflect;
         private ServiceProvider serviceProvider;
+
+        public Builder logger(@NotNull final Logger logger) {
+
+            this.logger = logger;
+            return this;
+
+        }
 
         public Builder classLoader(@NotNull final ClassLoader classLoader) {
 
@@ -188,6 +216,7 @@ public class EasyCommand {
         public EasyCommand build() {
 
             final EasyCommand easyCommand = new EasyCommand();
+            Conditional.executeIfNotNull(this.logger, () -> easyCommand.setLogger(this.logger));
             Conditional.executeIfNotNull(this.classLoader, () -> easyCommand.setClassLoader(this.classLoader));
             Conditional.executeIfNotNull(this.serviceProvider, () -> easyCommand.setServiceProvider(this.serviceProvider));
             Conditional.executeIfNotNull(this.easyReflect, () -> easyCommand.setEasyReflect(this.easyReflect));
